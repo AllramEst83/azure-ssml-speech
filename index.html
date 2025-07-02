@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Azure Speech Synthesizer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Azure Speech SDK CDN -->
+    <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+    <!-- Config JS (must be before main script) -->
+    <script src="config.js"></script>
+    <style>
+      /* Custom styles for better aesthetics and responsiveness */
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f0f4f8; /* Light blue-gray background */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh; /* Full viewport height */
+        margin: 0;
+        padding: 1rem;
+        box-sizing: border-box;
+      }
+      .container {
+        background-color: #ffffff;
+        border-radius: 1.5rem; /* More rounded corners */
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow */
+        max-width: 900px; /* Increased max-width */
+        width: 100%;
+        padding: 2.5rem; /* More padding */
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem; /* Consistent spacing */
+      }
+      h1 {
+        color: #1e3a8a; /* Darker blue for heading */
+        text-align: center;
+        font-size: 2.25rem; /* Larger heading */
+        font-weight: 700; /* Bold */
+        margin-bottom: 1.5rem;
+      }
+      textarea,
+      select {
+        border: 1px solid #d1d5db; /* Light gray border */
+        border-radius: 0.75rem; /* Rounded input fields */
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        color: #374151; /* Dark gray text */
+        background-color: #f9fafb; /* Slightly off-white background */
+        transition: border-color 0.2s, box-shadow 0.2s;
+        appearance: none; /* Remove default select arrow */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 1.25em 1.25em;
+      }
+      textarea:focus,
+      select:focus {
+        border-color: #2563eb; /* Blue focus border */
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); /* Soft blue shadow on focus */
+      }
+      textarea {
+        min-height: 120px; /* Taller text area */
+        resize: vertical;
+      }
+      .grid-cols-2 {
+        grid-template-columns: repeat(
+          auto-fit,
+          minmax(250px, 1fr)
+        ); /* Responsive grid */
+      }
+      button {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Button shadow */
+      }
+      button:hover {
+        transform: translateY(-2px); /* Slight lift on hover */
+        box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* Enhanced shadow */
+      }
+      button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .button-start {
+        background-color: #22c55e; /* Green for start */
+        color: #ffffff;
+        border: none;
+      }
+      .button-start:hover {
+        background-color: #16a34a; /* Darker green on hover */
+      }
+      .button-stop {
+        background-color: #ef4444; /* Red for stop */
+        color: #ffffff;
+        border: none;
+      }
+      .button-stop:hover {
+        background-color: #dc2626; /* Darker red on hover */
+      }
+      .status-message {
+        text-align: center;
+        font-weight: 500;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        margin-top: 1rem;
+      }
+      .status-success {
+        background-color: #d1fae5; /* Light green */
+        color: #065f46; /* Dark green text */
+      }
+      .status-error {
+        background-color: #fee2e2; /* Light red */
+        color: #991b1b; /* Dark red text */
+      }
+      .status-info {
+        background-color: #e0f2fe; /* Light blue */
+        color: #1e40af; /* Dark blue text */
+      }
+
+      /* Ensure responsive grid for smaller screens */
+      @media (max-width: 640px) {
+        .grid-cols-2 {
+          grid-template-columns: 1fr; /* Single column on small screens */
+        }
+        .container {
+          padding: 1.5rem;
+        }
+        h1 {
+          font-size: 1.75rem;
+        }
+      }
+
+      /* Additional custom styles for improved look */
+      .container {
+        background: linear-gradient(135deg, #f0f4f8 0%, #e0e7ef 100%);
+      }
+      .status-message {
+        border: 1.5px solid #c7d2fe;
+      }
+      .button-start,
+      .button-stop {
+        min-width: 180px;
+      }
+      textarea:focus,
+      select:focus {
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container shadow-2xl border border-blue-200">
+      <h1
+        class="text-4xl font-extrabold text-blue-900 mb-2 tracking-tight drop-shadow-lg"
+      >
+        Azure Speech Synthesizer
+      </h1>
+      <p class="text-center text-lg text-blue-700 mb-6">
+        Generate lifelike speech with Azure AI. Customize the voice, style, and
+        more!
+      </p>
+
+      <div
+        class="grid grid-cols-1 md:grid-cols-2 gap-8 bg-blue-50 rounded-xl p-6 border border-blue-100 mb-4"
+      >
+        <!-- Text Input -->
+        <div class="col-span-full flex flex-col gap-2 md:col-span-2">
+          <label
+            for="textInput"
+            class="block text-blue-900 text-base font-semibold"
+            >Text to Synthesize:</label
+          >
+          <textarea
+            id="textInput"
+            class="w-full bg-white border-2 border-blue-200 focus:border-blue-500 rounded-xl p-3 text-lg shadow-sm transition"
+            placeholder="Enter text here..."
+          ></textarea>
+        </div>
+
+        <!-- Language Dropdown -->
+        <div class="flex flex-col gap-2">
+          <label
+            for="languageSelect"
+            class="block text-blue-900 text-base font-semibold"
+            >Language:</label
+          >
+          <select
+            id="languageSelect"
+            class="w-full bg-white border-2 border-blue-200 focus:border-blue-500 rounded-xl p-2 text-base shadow-sm transition"
+          >
+            <option value="en-US" selected>English (US)</option>
+            <option value="en-GB">English (UK)</option>
+            <option value="es-ES">Spanish (Spain)</option>
+            <option value="fr-FR">French (France)</option>
+            <option value="de-DE">German (Germany)</option>
+            <option value="zh-CN">Chinese (Mandarin, Simplified)</option>
+            <option value="ja-JP">Japanese (Japan)</option>
+            <option value="sv-SE">Swedish (Sweden)</option>
+          </select>
+        </div>
+
+        <!-- Voice Name Dropdown -->
+        <div class="flex flex-col gap-2">
+          <label
+            for="voiceSelect"
+            class="block text-blue-900 text-base font-semibold"
+            >Voice Name:</label
+          >
+          <select
+            id="voiceSelect"
+            class="w-full bg-white border-2 border-blue-200 focus:border-blue-500 rounded-xl p-2 text-base shadow-sm transition"
+          >
+            <!-- Options will be populated dynamically by JS based on language, or static common ones -->
+            <option value="en-US-JennyNeural" selected>
+              Jenny (English US)
+            </option>
+            <option value="en-US-GuyNeural">Guy (English US)</option>
+            <option value="en-GB-LibbyNeural">Libby (English UK)</option>
+            <option value="en-GB-RyanNeural">Ryan (English UK)</option>
+            <option value="es-ES-ElviraNeural">Elvira (Spanish ES)</option>
+            <option value="es-ES-AlvaroNeural">Alvaro (Spanish ES)</option>
+            <option value="fr-FR-DeniseNeural">Denise (French FR)</option>
+            <option value="de-DE-KatjaNeural">Katja (German DE)</option>
+            <option value="zh-CN-XiaoxiaoNeural">Xiaoxiao (Chinese CN)</option>
+            <option value="ja-JP-NanamiNeural">Nanami (Japanese JP)</option>
+            <option value="sv-SE-SofieNeural">Sofie (Swedish SE)</option>
+            <option value="sv-SE-MattiasNeural">Mattias (Swedish SE)</option>
+          </select>
+        </div>
+
+        <!-- Voice Style Dropdown -->
+        <div class="flex flex-col gap-2">
+          <label
+            for="styleSelect"
+            class="block text-blue-900 text-base font-semibold"
+            >Voice Style:</label
+          >
+          <select
+            id="styleSelect"
+            class="w-full bg-white border-2 border-blue-200 focus:border-blue-500 rounded-xl p-2 text-base shadow-sm transition"
+          >
+            <option value="">Default</option>
+            <option value="cheerful" selected>Cheerful</option>
+            <option value="sad">Sad</option>
+            <option value="angry">Angry</option>
+            <option value="friendly">Friendly</option>
+            <option value="customerservice">Customer Service</option>
+            <option value="newscast">Newscast</option>
+            <option value="narration-professional">
+              Narration (Professional)
+            </option>
+            <option value="excited">Excited</option>
+            <option value="hopeful">Hopeful</option>
+            <option value="shouting">Shouting</option>
+            <option value="whispering">Whispering</option>
+          </select>
+        </div>
+
+        <!-- Style Degree Dropdown -->
+        <div class="flex flex-col gap-2">
+          <label
+            for="styleDegreeSelect"
+            class="block text-blue-900 text-base font-semibold"
+            >Voice Style:</label
+          >
+          <select
+            id="styleDegreeSelect"
+            class="w-full bg-white border-2 border-blue-200 focus:border-blue-500 rounded-xl p-2 text-base shadow-sm transition"
+          >
+            <option value="default" selected>Default (100%)</option>
+            <option value="50%">50%</option>
+            <option value="75%">75%</option>
+            <option value="100%">100%</option>
+            <option value="125%">125%</option>
+            <option value="150%">150%</option>
+            <option value="175%">175%</option>
+            <option value="200%">200%</option>
+          </select>
+        </div>
+
+        <!-- Role Dropdown (New) -->
+        <div class="flex flex-col gap-2">
+          <label
+            for="roleSelect"
+            class="block text-blue-900 text-base font-semibold"
+            >Role:</label
+          >
+          <select
+            id="roleSelect"
+            class="w-full bg-white border-2 border-blue-200 focus:border-blue-500 rounded-xl p-2 text-base shadow-sm transition"
+          >
+            <option value="">Default</option>
+            <option value="Girl">Girl</option>
+            <option value="Boy">Boy</option>
+            <option value="YoungAdultFemale">Young Adult Female</option>
+            <option value="YoungAdultMale">Young Adult Male</option>
+            <option value="OlderAdultFemale">Older Adult Female</option>
+            <option value="OlderAdultMale">Older Adult Male</option>
+            <option value="SeniorFemale" selected>Senior Female</option>
+            <option value="SeniorMale">Senior Male</option>
+          </select>
+        </div>
+
+        <!-- Pitch Dropdown -->
+        <div class="flex flex-col gap-2">
+          <label
+            for="pitchSelect"
+            class="block text-blue-900 text-base font-semibold"
+            >Pitch:</label
+          >
+          <select
+            id="pitchSelect"
+            class="w-full bg-white border-2 border-blue-200 focus:border-blue-500 rounded-xl p-2 text-base shadow-sm transition"
+          >
+            <option value="default" selected>Default</option>
+            <option value="x-low">X-Low</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="x-high">X-High</option>
+            <option value="+20%">+20%</option>
+            <option value="-10%">-10%</option>
+          </select>
+        </div>
+
+        <!-- Rate Dropdown -->
+        <div class="flex flex-col gap-2">
+          <label
+            for="rateSelect"
+            class="block text-blue-900 text-base font-semibold"
+            >Rate:</label
+          >
+          <select
+            id="rateSelect"
+            class="w-full bg-white border-2 border-blue-200 focus:border-blue-500 rounded-xl p-2 text-base shadow-sm transition"
+          >
+            <option value="default" selected>Default</option>
+            <option value="x-slow">X-Slow</option>
+            <option value="slow">Slow</option>
+            <option value="medium">Medium</option>
+            <option value="fast">Fast</option>
+            <option value="x-fast">X-Fast</option>
+            <option value="+50%">+50%</option>
+            <option value="-20%">-20%</option>
+          </select>
+        </div>
+
+        <!-- Volume Dropdown (New) -->
+        <div class="flex flex-col gap-2">
+          <label
+            for="volumeSelect"
+            class="block text-blue-900 text-base font-semibold"
+            >Volume:</label
+          >
+          <select
+            id="volumeSelect"
+            class="w-full bg-white border-2 border-blue-200 focus:border-blue-500 rounded-xl p-2 text-base shadow-sm transition"
+          >
+            <option value="default" selected>Default</option>
+            <option value="x-soft">X-Soft</option>
+            <option value="soft">Soft</option>
+            <option value="medium">Medium</option>
+            <option value="loud">Loud</option>
+            <option value="x-loud">X-Loud</option>
+            <option value="+20%">+20%</option>
+            <option value="-10%">-10%</option>
+          </select>
+        </div>
+
+        <!-- Emphasis Dropdown (New) -->
+        <div class="flex flex-col gap-2">
+          <label
+            for="emphasisSelect"
+            class="block text-blue-900 text-base font-semibold"
+            >Emphasis:</label
+          >
+          <select
+            id="emphasisSelect"
+            class="w-full bg-white border-2 border-blue-200 focus:border-blue-500 rounded-xl p-2 text-base shadow-sm transition"
+          >
+            <option value="none" selected>None</option>
+            <option value="strong">Strong</option>
+            <option value="moderate">Moderate</option>
+            <option value="reduced">Reduced</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+        <button
+          id="startButton"
+          class="button-start bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 shadow-lg text-lg px-8 py-3"
+        >
+          Start Synthesis
+        </button>
+        <button
+          id="stopButton"
+          class="button-stop bg-gradient-to-r from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 shadow-lg text-lg px-8 py-3"
+          disabled
+        >
+          Stop Synthesis
+        </button>
+      </div>
+
+      <!-- Status Message -->
+      <div
+        id="statusMessage"
+        class="status-message status-info mt-6 text-lg font-medium shadow-inner"
+      >
+        Enter text and click 'Start Synthesis'.
+      </div>
+    </div>
+
+    <script>
+      // Ensure the speech SDK is loaded before trying to use it.
+      window.onload = function () {
+        // --- IMPORTANT: Replace with your actual Azure Speech Service Key and Region ---
+        // You can find these in your Azure portal under your Speech Service resource.
+        const SPEECH_KEY = AZURE_SPEECH_CONFIG.KEY;
+        const SPEECH_REGION = AZURE_SPEECH_CONFIG.REGION;
+
+        // Get references to HTML elements
+        const textInput = document.getElementById("textInput");
+        const languageSelect = document.getElementById("languageSelect");
+        const voiceSelect = document.getElementById("voiceSelect");
+        const styleSelect = document.getElementById("styleSelect");
+        const styleDegreeSelect = document.getElementById("styleDegreeSelect");
+        const roleSelect = document.getElementById("roleSelect");
+        const pitchSelect = document.getElementById("pitchSelect");
+        const rateSelect = document.getElementById("rateSelect");
+        const volumeSelect = document.getElementById("volumeSelect");
+        const emphasisSelect = document.getElementById("emphasisSelect");
+        const startButton = document.getElementById("startButton");
+        const stopButton = document.getElementById("stopButton");
+        const statusMessage = document.getElementById("statusMessage");
+
+        // Initialize Speech SDK objects
+        let speechConfig;
+        let synthesizer;
+
+        // Function to update status message
+        function updateStatus(message, type = "info") {
+          statusMessage.textContent = message;
+          statusMessage.className = `status-message status-${type}`;
+        }
+
+        // Function to enable/disable buttons
+        function setButtonsState(isSynthesizing) {
+          startButton.disabled = isSynthesizing;
+          stopButton.disabled = !isSynthesizing;
+        }
+
+        // Initialize SpeechConfig and Synthesizer
+        try {
+          speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+            SPEECH_KEY,
+            SPEECH_REGION
+          );
+          // Set the output format to be a WAV file (default is usually OK but good to be explicit)
+          speechConfig.speechSynthesisOutputFormat =
+            SpeechSDK.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
+
+          // Create a speech synthesizer.
+          // The AudioConfig.fromDefaultSpeakerOutput() will direct the audio to the default speaker.
+          synthesizer = new SpeechSDK.SpeechSynthesizer(
+            speechConfig,
+            SpeechSDK.AudioConfig.fromDefaultSpeakerOutput()
+          );
+
+          // Event handler for synthesis completion
+          synthesizer.SynthesisCompleted = function (s, e) {
+            if (
+              e.result.reason ===
+              SpeechSDK.ResultReason.SynthesizingAudioCompleted
+            ) {
+              updateStatus("Synthesis completed successfully.", "success");
+            } else if (e.result.reason === SpeechSDK.ResultReason.Canceled) {
+              const cancellationDetails =
+                SpeechSDK.CancellationDetails.fromResult(e.result);
+              if (
+                cancellationDetails.reason ===
+                SpeechSDK.CancellationReason.Error
+              ) {
+                updateStatus(
+                  `Synthesis cancelled. Error details: ${cancellationDetails.errorDetails}`,
+                  "error"
+                );
+              } else {
+                updateStatus("Synthesis cancelled.", "info");
+              }
+            }
+            setButtonsState(false);
+          };
+
+          // Event handler for synthesis cancellation
+          synthesizer.Canceled = function (s, e) {
+            const cancellationDetails =
+              SpeechSDK.CancellationDetails.fromResult(e.result);
+            if (
+              cancellationDetails.reason === SpeechSDK.CancellationReason.Error
+            ) {
+              updateStatus(
+                `Synthesis error: ${cancellationDetails.errorDetails}`,
+                "error"
+              );
+            } else {
+              updateStatus("Synthesis cancelled.", "info");
+            }
+            setButtonsState(false);
+          };
+
+          // Event handler for synthesis started
+          synthesizer.SynthesisStarted = function (s, e) {
+            updateStatus("Synthesis started...", "info");
+            setButtonsState(true);
+          };
+        } catch (error) {
+          updateStatus(
+            `Error initializing Speech SDK: ${error.message}. Please check your key and region.`,
+            "error"
+          );
+          startButton.disabled = true;
+          stopButton.disabled = true;
+          return; // Stop execution if SDK initialization fails
+        }
+
+        // Function to build SSML string dynamically
+        function buildSsml(
+          text,
+          lang,
+          voiceName,
+          style,
+          styleDegree,
+          role,
+          pitch,
+          rate,
+          volume,
+          emphasis
+        ) {
+          let ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${lang}">`;
+          ssml += `<voice name="${voiceName}">`;
+
+          let openTags = [];
+
+          // mstts:express-as
+          let expressAsAttributes = [];
+          if (style && style !== "") {
+            expressAsAttributes.push(`style="${style}"`);
+          }
+          if (styleDegree && styleDegree !== "default") {
+            expressAsAttributes.push(
+              `styledegree="${parseFloat(styleDegree) / 100}"`
+            );
+          }
+          if (role && role !== "") {
+            expressAsAttributes.push(`role="${role}"`);
+          }
+          if (expressAsAttributes.length > 0) {
+            const tag = `<mstts:express-as ${expressAsAttributes.join(" ")}>`;
+            ssml += tag;
+            openTags.push("</mstts:express-as>");
+          }
+
+          // prosody
+          let prosodyAttributes = [];
+          if (pitch && pitch !== "default") {
+            prosodyAttributes.push(`pitch="${pitch}"`);
+          }
+          if (rate && rate !== "default") {
+            prosodyAttributes.push(`rate="${rate}"`);
+          }
+          if (volume && volume !== "default") {
+            prosodyAttributes.push(`volume="${volume}"`);
+          }
+          if (prosodyAttributes.length > 0) {
+            const tag = `<prosody ${prosodyAttributes.join(" ")}>`;
+            ssml += tag;
+            openTags.push("</prosody>");
+          }
+
+          // emphasis
+          if (emphasis && emphasis !== "none") {
+            const tag = `<emphasis level="${emphasis}">`;
+            ssml += tag;
+            openTags.push("</emphasis>");
+          }
+
+          // Escape special characters in the text content for SSML safety
+          const escapedText = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&apos;");
+
+          ssml += escapedText;
+
+          // Close tags in reverse order
+          ssml += openTags.reverse().join("");
+
+          ssml += `</voice>`;
+          ssml += `</speak>`;
+          return ssml;
+        }
+
+        // Start Synthesis button click handler
+        startButton.addEventListener("click", () => {
+          const text = textInput.value.trim();
+          const lang = languageSelect.value;
+          const voiceName = voiceSelect.value;
+          const style = styleSelect.value;
+          const styleDegree = styleDegreeSelect.value;
+          const role = roleSelect.value;
+          const pitch = pitchSelect.value;
+          const rate = rateSelect.value;
+          const volume = volumeSelect.value;
+          const emphasis = emphasisSelect.value;
+
+          if (!text) {
+            updateStatus("Please enter some text to synthesize.", "error");
+            return;
+          }
+          if (!synthesizer) {
+            updateStatus(
+              "Speech synthesizer not initialized. Check console for errors.",
+              "error"
+            );
+            return;
+          }
+
+          const ssml = buildSsml(
+            text,
+            lang,
+            voiceName,
+            style,
+            styleDegree,
+            role,
+            pitch,
+            rate,
+            volume,
+            emphasis
+          );
+          updateStatus("Sending SSML for synthesis...", "info");
+          setButtonsState(true);
+
+          synthesizer.speakSsmlAsync(
+            ssml,
+            (result) => {
+              if (
+                result.reason ===
+                SpeechSDK.ResultReason.SynthesizingAudioCompleted
+              ) {
+                // Audio played through the default speaker output
+                updateStatus("Synthesis finished.", "success");
+              } else {
+                const cancellation =
+                  SpeechSDK.CancellationDetails.fromResult(result);
+                if (
+                  cancellation.reason === SpeechSDK.CancellationReason.Error
+                ) {
+                  updateStatus(
+                    `Synthesis error: ${cancellation.errorDetails}. SSML: ${ssml}`,
+                    "error"
+                  );
+                } else {
+                  updateStatus(
+                    `Synthesis cancelled: ${cancellation.reason}.`,
+                    "error"
+                  );
+                }
+              }
+              setButtonsState(false);
+            },
+            (error) => {
+              updateStatus(`An unexpected error occurred: ${error}`, "error");
+              setButtonsState(false);
+            }
+          );
+        });
+
+        // Stop Synthesis button click handler
+        stopButton.addEventListener("click", () => {
+          if (synthesizer) {
+            synthesizer.stopSpeakingAsync(
+              () => {
+                updateStatus("Synthesis stopped.", "info");
+                setButtonsState(false);
+              },
+              (error) => {
+                updateStatus(`Error stopping synthesis: ${error}`, "error");
+                setButtonsState(false);
+              }
+            );
+          }
+        });
+
+        // Initial state for buttons
+        setButtonsState(false);
+
+        // Set a default text to make it easy to test
+        textInput.value =
+          "Hello! This is an example of speech synthesis using Azure's advanced capabilities. You can modify my voice using the options above.";
+      };
+    </script>
+  </body>
+</html>
