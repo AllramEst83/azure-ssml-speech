@@ -1,0 +1,145 @@
+/* Custom styles for better aesthetics and responsiveness */
+body {
+  font-family: "Inter", sans-serif;
+  background-color: #f0f4f8; /* Light blue-gray background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* Full viewport height */
+  margin: 0;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+.container {
+  background-color: #ffffff;
+  border-radius: 1.5rem; /* More rounded corners */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow */
+  max-width: 900px; /* Increased max-width */
+  width: 100%;
+  padding: 2.5rem; /* More padding */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Consistent spacing */
+}
+h1 {
+  color: #1e3a8a; /* Darker blue for heading */
+  text-align: center;
+  font-size: 2.25rem; /* Larger heading */
+  font-weight: 700; /* Bold */
+  margin-bottom: 1.5rem;
+}
+textarea,
+select {
+  border: 1px solid #d1d5db; /* Light gray border */
+  border-radius: 0.75rem; /* Rounded input fields */
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  color: #374151; /* Dark gray text */
+  background-color: #f9fafb; /* Slightly off-white background */
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none; /* Remove default select arrow */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.25em 1.25em;
+}
+textarea:focus,
+select:focus {
+  border-color: #2563eb; /* Blue focus border */
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); /* Soft blue shadow on focus */
+}
+textarea {
+  min-height: 120px; /* Taller text area */
+  resize: vertical;
+}
+.grid-cols-2 {
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(250px, 1fr)
+  ); /* Responsive grid */
+}
+button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Button shadow */
+}
+button:hover {
+  transform: translateY(-2px); /* Slight lift on hover */
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* Enhanced shadow */
+}
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.button-start {
+  background-color: #22c55e; /* Green for start */
+  color: #ffffff;
+  border: none;
+}
+.button-start:hover {
+  background-color: #16a34a; /* Darker green on hover */
+}
+.button-stop {
+  background-color: #ef4444; /* Red for stop */
+  color: #ffffff;
+  border: none;
+}
+.button-stop:hover {
+  background-color: #dc2626; /* Darker red on hover */
+}
+.status-message {
+  text-align: center;
+  font-weight: 500;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+}
+.status-success {
+  background-color: #d1fae5; /* Light green */
+  color: #065f46; /* Dark green text */
+}
+.status-error {
+  background-color: #fee2e2; /* Light red */
+  color: #991b1b; /* Dark red text */
+}
+.status-info {
+  background-color: #e0f2fe; /* Light blue */
+  color: #1e40af; /* Dark blue text */
+}
+
+/* Ensure responsive grid for smaller screens */
+@media (max-width: 640px) {
+  .grid-cols-2 {
+    grid-template-columns: 1fr; /* Single column on small screens */
+  }
+  .container {
+    padding: 1.5rem;
+  }
+  h1 {
+    font-size: 1.75rem;
+  }
+}
+
+/* Additional custom styles for improved look */
+.container {
+  background: linear-gradient(135deg, #f0f4f8 0%, #e0e7ef 100%);
+}
+.status-message {
+  border: 1.5px solid #c7d2fe;
+}
+.button-start,
+.button-stop {
+  min-width: 180px;
+}
+textarea:focus,
+select:focus {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
